@@ -42,10 +42,10 @@ while not is_connected:
 
 # Get Dspace item list
 handle = '1774.2/41445'#raw_input('Enter handle: ')
-DSendpoint = DSbaseURL + '/handle/' + handle
+DSendpoint = DSbaseURL + 'rest/handle/' + handle
 collection = requests.get(DSendpoint).json()
 collectionID = collection['id']
-DSendpoint = DSbaseURL + '/collections/' + str(collectionID)+ '/items'
+DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items'
 itemList = requests.get(DSendpoint).json()
 print itemList
 # print 'Found ' + str(len(itemList)-1) + ' DSpace items attached to collection ' + collectionID + '.'
@@ -63,8 +63,6 @@ print 'Found ' + str(len(archivalObjects)-1) + ' archival objects attached to re
 
 for archivalObject in archivalObjects:
 	output = requests.get(ASbaseURL + archivalObject, headers=headers).json()
-	# for value in gen_dict_extract('parent', output):
-	# 	if '171894' in json.dumps(output):
 	for instance in output['instances']:
 		indicator_1 = instance['container']['indicator_1']
 		indicator_1 = indicator_1.split('-')
@@ -86,7 +84,7 @@ for archivalObject in archivalObjects:
 		for item in itemList:
 		    itemHandle = item['handle']
 		    itemID = str(item['link'])
-		    bitstreams = requests.get('https://dspace-stage.library.jhu.edu/'+itemID+'/bitstreams').json()
+		    bitstreams = requests.get(DSbaseURL+itemID+'/bitstreams').json()
 		    for bitstream in bitstreams:
 		        fileName = bitstream['name']
 		        strippedFileName = fileName.replace('.pdf','')
