@@ -34,25 +34,14 @@ def test_connection():
 		print 'Connected to ArchivesSpace!'
 		return True
 	except requests.exceptions.ConnectionError:
-		print 'ArchivesSpace connection error. Please confirm ArchivesSpace is running.  Trying again in 10 seconds.'
+		print 'ArchivesSpace connection error. Please confirm ArchivesSpace is running. Trying again in 10 seconds.'
 is_connected = test_connection()
 while not is_connected:
 	time.sleep(10)
 	is_connected = test_connection()
 
-# Get Dspace item list
-handle = '1774.2/41445'#raw_input('Enter handle: ')
-DSendpoint = DSbaseURL + 'rest/handle/' + handle
-collection = requests.get(DSendpoint).json()
-collectionID = collection['id']
-DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items'
-itemList = requests.get(DSendpoint).json()
-print itemList
-# print 'Found ' + str(len(itemList)-1) + ' DSpace items attached to collection ' + collectionID + '.'
-
 # Get all AOs from the resource record
 resourceID = '1045' # raw_input('Enter resource ID: ')
-
 ASendpoint = '/repositories/3/resources/'+resourceID+'/tree'
 output = requests.get(ASbaseURL + ASendpoint, headers=headers).json()
 archivalObjects = []
@@ -61,40 +50,57 @@ for value in gen_dict_extract('record_uri', output):
         archivalObjects.append(value)
 print 'Found ' + str(len(archivalObjects)-1) + ' archival objects attached to resource ' + resourceID +'.'
 
-for archivalObject in archivalObjects:
-	output = requests.get(ASbaseURL + archivalObject, headers=headers).json()
-	for instance in output['instances']:
-		indicator_1 = instance['container']['indicator_1']
-		indicator_1 = indicator_1.split('-')
-		indicator_1a = indicator_1[0]
-		indicator_1a = indicator_1a.rjust(2,'0')
-		indicator_1b = re.sub('[a-z]', '', indicator_1[1])
-		indicator_1b = indicator_1b.rjust(2,'0')
-		try:
-			indicator_2 = instance['container']['indicator_2']
-			indicator_2 = '_' + indicator_2.rjust(2,'0')
-		except:
-			indicator_2 = ''
-		try:
-			indicator_3 = instance['container']['indicator_3']
-			indicator_3 = '_' + indicator_3.rjust(2,'0')
-		except:
-			indicator_3 = ''
-		potentialFilename = indicator_1a + '_' + indicator_1b + indicator_2 + indicator_3
-		for item in itemList:
-		    itemHandle = item['handle']
-		    itemID = str(item['link'])
-		    bitstreams = requests.get(DSbaseURL+itemID+'/bitstreams').json()
-		    for bitstream in bitstreams:
-		        fileName = bitstream['name']
-		        strippedFileName = fileName.replace('.pdf','')
-			if potentialFilename == strippedFileName:
-				match = {}
-				match['digital_object_id'] = DSbaseURL + itemHandle
-				match['title'] = output['title'] + '(digital copy)'
-				match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
-				print match
-				del itemList[0]
+# Get Dspace item list
+handle = '1774.2/41445'#raw_input('Enter handle: ')
+DSendpoint = DSbaseURL + 'rest/handle/' + handle
+if DSendpoint != '':
+    print 'Connected to DSpace!'
+else:
+    print 'DSpace connection error. Please confirm DSpace is running.'
+collection = requests.get(DSendpoint).json()
+collectionID = collection['id']
+DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=30'
+itemList = requests.get(DSendpoint).json()
+print 'Found ' + str(len(itemList)) + ' DSpace items attached to collection.'
+for item in itemList:
+    DSitems = {}
+    itemHandle = item['handle']
+    itemID = str(item['link'])
+    bitstreams = requests.get(DSbaseURL+itemID+'/bitstreams').json()
+    for bitstream in bitstreams:
+        fileName = bitstream['name']
+        strippedFileName = fileName.replace('.pdf','')
+    DSitems['strippedFileName'] = strippedFileName
+    for archivalObject in archivalObjects:
+        output = requests.get(ASbaseURL + archivalObject, headers=headers).json()
+        for instance in output['instances']:
+            indicator_1 = instance['container']['indicator_1']
+            if indicator_1.startswith('1-'):
+                print 'Constructing potential file name from archival object.'
+                indicator_1 = indicator_1.split('-')
+                indicator_1a = indicator_1[0]
+                indicator_1a = indicator_1a.rjust(2,'0')
+                indicator_1b = re.sub('[a-z]', '', indicator_1[1])
+                indicator_1b = indicator_1b.rjust(2,'0')
+                try:
+                    indicator_2 = instance['container']['indicator_2']
+                    indicator_2 = '_' + indicator_2.rjust(2,'0')
+                except:
+                    indicator_2 = ''
+                try:
+                    indicator_3 = instance['container']['indicator_3']
+                    indicator_3 = '_' + indicator_3.rjust(2,'0')
+                except:
+                    indicator_3 = ''
+                potentialFilename = indicator_1a + '_' + indicator_1b + indicator_2 + indicator_3
+                print 'Comparing ' + potentialFilename + ' to ' + DSitems['strippedFileName']
+                if potentialFilename == DSitems['strippedFileName']:
+                    print 'Creating JSON for match between ' + potentialFilename + ' and ' + strippedFileName + '.'
+                    match = {}
+                    match['digital_object_id'] = DSbaseURL + itemHandle
+                    match['title'] = output['title'] + '(digital copy)'
+                    match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
+                    print match
 
 # show script runtime
 elapsedTime = time.time() - startTime
