@@ -1,8 +1,8 @@
 # spacewalk
 DSpace to ASpace crosswalking for JHU
 
-We have **DSpace** items with names like:
-  * 01_01_22_33
+We have **DSpace** items with bitstreams filenames like:
+  * 01_01_22_33.pdf
   
 That needed to be matched to **ASpace** archival objects with instance information like:
   * Box 1-1
