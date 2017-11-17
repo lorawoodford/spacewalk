@@ -1,13 +1,13 @@
 # spacewalk
 DSpace to ASpace crosswalking for JHU
 
-We have *DSpace* items with names like:
-  01_01_22_33
+We have **DSpace** items with names like:
+  * 01_01_22_33
   
-That needed to be matched to ASpace archival objects with instance information like:
-  Box 1-1
-  Folder 22
-  Item 33
+That needed to be matched to **ASpace** archival objects with instance information like:
+  * Box 1-1
+  * Folder 22
+  * Item 33
   
 No other possible match point existed between the DSpace digital surrogates and the ASpace archival objects.  This script does the heavy lifting.
 
