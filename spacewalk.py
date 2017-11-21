@@ -59,10 +59,11 @@ else:
     print 'DSpace connection error. Please confirm DSpace is running.'
 collection = requests.get(DSendpoint).json()
 collectionID = collection['id']
-DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=30'
+DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=1000'
 itemList = requests.get(DSendpoint).json()
 print 'Found ' + str(len(itemList)) + ' DSpace items attached to collection.'
 for item in itemList:
+    match = {}
     DSitems = {}
     itemHandle = item['handle']
     itemID = str(item['link'])
@@ -74,33 +75,37 @@ for item in itemList:
     for archivalObject in archivalObjects:
         output = requests.get(ASbaseURL + archivalObject, headers=headers).json()
         for instance in output['instances']:
-            indicator_1 = instance['container']['indicator_1']
-            if indicator_1.startswith('1-'):
-                print 'Constructing potential file name from archival object.'
-                indicator_1 = indicator_1.split('-')
-                indicator_1a = indicator_1[0]
-                indicator_1a = indicator_1a.rjust(2,'0')
-                indicator_1b = re.sub('[a-z]', '', indicator_1[1])
-                indicator_1b = indicator_1b.rjust(2,'0')
-                try:
-                    indicator_2 = instance['container']['indicator_2']
-                    indicator_2 = '_' + indicator_2.rjust(2,'0')
-                except:
-                    indicator_2 = ''
-                try:
-                    indicator_3 = instance['container']['indicator_3']
-                    indicator_3 = '_' + indicator_3.rjust(2,'0')
-                except:
-                    indicator_3 = ''
-                potentialFilename = indicator_1a + '_' + indicator_1b + indicator_2 + indicator_3
-                print 'Comparing ' + potentialFilename + ' to ' + DSitems['strippedFileName']
-                if potentialFilename == DSitems['strippedFileName']:
-                    print 'Creating JSON for match between ' + potentialFilename + ' and ' + strippedFileName + '.'
-                    match = {}
-                    match['digital_object_id'] = DSbaseURL + itemHandle
-                    match['title'] = output['title'] + '(digital copy)'
-                    match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
-                    print match
+            if match == {}:
+                indicator_1 = instance['container']['indicator_1']
+                if indicator_1.startswith('1-'):
+                    print 'Constructing potential file name from archival object.'
+                    indicator_1 = indicator_1.split('-')
+                    indicator_1a = indicator_1[0]
+                    indicator_1a = indicator_1a.rjust(2,'0')
+                    indicator_1b = re.sub('[a-z]', '', indicator_1[1])
+                    indicator_1b = indicator_1b.rjust(2,'0')
+                    try:
+                        indicator_2 = instance['container']['indicator_2']
+                        indicator_2 = '_' + indicator_2.rjust(2,'0')
+                    except:
+                        indicator_2 = ''
+                    try:
+                        indicator_3 = instance['container']['indicator_3']
+                        indicator_3 = '_' + indicator_3.rjust(2,'0')
+                    except:
+                        indicator_3 = ''
+                    potentialFilename = indicator_1a + '_' + indicator_1b + indicator_2 + indicator_3
+                    print 'Comparing ' + potentialFilename + ' to ' + DSitems['strippedFileName']
+                    if potentialFilename == DSitems['strippedFileName']:
+                        print 'Creating JSON for match between ' + potentialFilename + ' and ' + strippedFileName + '.'
+                        match['digital_object_id'] = DSbaseURL + itemHandle
+                        match['title'] = output['title'] + '(digital copy)'
+                        match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
+                        print match
+                        break
+        else:
+            continue
+        break
 
 # show script runtime
 elapsedTime = time.time() - startTime
