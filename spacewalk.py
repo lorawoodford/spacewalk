@@ -40,6 +40,21 @@ while not is_connected:
 	time.sleep(10)
 	is_connected = test_connection()
 
+# Account for ranges in indicator_2s
+def hyphen_range(s):
+    # Takes a range in form of "a-b" and generate a list of numbers between a and b inclusive.
+    # Also accepts comma separated ranges like "a-b,c-d,f" will build a list which will include
+    # Numbers from a to b, a to d and f
+    s="".join(s.split()) #removes white space
+    r=set()
+    for x in s.split(','):
+        t=x.split('-')
+        if len(t) not in [1,2]: raise SyntaxError("hash_range is given its arguement as "+s+" which seems not correctly formated.")
+        r.add(int(t[0])) if len(t)==1 else r.update(set(range(int(t[0]),int(t[1])+1)))
+    l=list(r)
+    l.sort()
+    return l
+
 # Get all AOs from the resource record
 resourceID = '1045' # raw_input('Enter resource ID: ')
 ASendpoint = '/repositories/3/resources/'+resourceID+'/tree'
@@ -59,7 +74,7 @@ else:
     print 'DSpace connection error. Please confirm DSpace is running.'
 collection = requests.get(DSendpoint).json()
 collectionID = collection['id']
-DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=20'
+DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=3000'
 itemList = requests.get(DSendpoint).json()
 print 'Found ' + str(len(itemList)) + ' DSpace items attached to collection.'
 for item in itemList:
@@ -80,12 +95,11 @@ for item in itemList:
                 if indicator_1.startswith('1-'):
                     try:
                         indicator_2 = instance['container']['indicator_2']
-                        if '-' in indicator_2:
-                            indicator_2s = indicator_2.split('-')
+                        if '-' in indicator_2 or ',' in indicator_2:
+                            indicator_2s = hyphen_range(indicator_2)
                             for i in range(len(indicator_2s)):
                                 print 'Constructing potential file name from archival object.'
-                                print indicator_2s
-                                indicator_2 = '_' + indicator_2s[i].rjust(2, '0')
+                                indicator_2 = '_' + str(indicator_2s[i]).rjust(2,'0')
                                 indicator_1 = instance['container']['indicator_1']
                                 indicator_1 = indicator_1.split('-')
                                 indicator_1a = indicator_1[0]
@@ -106,6 +120,7 @@ for item in itemList:
                                     match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
                                     print match
                                     break
+                                indicator_2 = instance['container']['indicator_2']
                             else:
                                 continue
                             break
