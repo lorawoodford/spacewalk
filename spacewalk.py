@@ -74,7 +74,7 @@ else:
     print 'DSpace connection error. Please confirm DSpace is running.'
 collection = requests.get(DSendpoint).json()
 collectionID = collection['id']
-DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=3000'
+DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=2800'
 itemList = requests.get(DSendpoint).json()
 print 'Found ' + str(len(itemList)) + ' DSpace items attached to collection.'
 for item in itemList:
@@ -89,23 +89,61 @@ for item in itemList:
     DSitems['strippedFileName'] = strippedFileName
     for archivalObject in archivalObjects:
         output = requests.get(ASbaseURL + archivalObject, headers=headers).json()
+        aoURI = output['uri']
         for instance in output['instances']:
             if match == {}:
-                indicator_1 = instance['container']['indicator_1']
-                if indicator_1.startswith('1-'):
-                    try:
-                        indicator_2 = instance['container']['indicator_2']
-                        if '-' in indicator_2 or ',' in indicator_2:
-                            indicator_2s = hyphen_range(indicator_2)
-                            for i in range(len(indicator_2s)):
-                                print 'Constructing potential file name from archival object.'
-                                indicator_2 = '_' + str(indicator_2s[i]).rjust(2,'0')
-                                indicator_1 = instance['container']['indicator_1']
+                try:
+                    indicator_1 = instance['container']['indicator_1']
+                    if indicator_1.startswith('1-'):
+                        try:
+                            indicator_2 = instance['container']['indicator_2']
+                            if '-' in indicator_2 or ',' in indicator_2:
+                                indicator_2s = hyphen_range(indicator_2)
+                                for i in range(len(indicator_2s)):
+                                    indicator_2 = '_' + str(indicator_2s[i]).rjust(2,'0')
+                                    indicator_1 = instance['container']['indicator_1']
+                                    indicator_1 = indicator_1.split('-')
+                                    indicator_1a = indicator_1[0]
+                                    indicator_1a = indicator_1a.rjust(2,'0')
+                                    indicator_1b = re.sub('[a-z]', '', indicator_1[1])
+                                    indicator_1b = indicator_1b.rjust(2,'0')
+                                    try:
+                                        indicator_3 = instance['container']['indicator_3']
+                                        indicator_3 = '_' + indicator_3.rjust(2,'0')
+                                    except:
+                                        indicator_3 = ''
+                                    potentialFilename = indicator_1a + '_' + indicator_1b + indicator_2 + indicator_3
+                                    print 'Comparing ' + potentialFilename + ' to ' + DSitems['strippedFileName']
+                                    if potentialFilename == DSitems['strippedFileName']:
+                                        print 'Creating JSON for match between ' + potentialFilename + ' and ' + strippedFileName + '.'
+                                        match['digital_object_id'] = DSbaseURL + itemHandle
+                                        match['title'] = output['title'] + ' (digital copy)'
+                                        match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
+                                        match['linked_instances'] = [{'ref': output['uri']}]
+                                        match['publish'] = True
+                                        print 'Posting new digital object.'
+                                        DOpost = requests.post(ASbaseURL + '/repositories/3/digital_objects', headers=headers, data=json.dumps(match)).json()
+                                        print DOpost
+                                        instances = output['instances']
+                                        digital_obj = {'ref': DOpost['uri']}
+                                        digital_obj = {'instance_type': 'digital_object', 'digital_object': digital_obj}
+                                        instances.append(digital_obj)
+                                        output['instances'] = instances
+                                        print 'Linking existing archival object.'
+                                        AOpost = requests.post(ASbaseURL + aoURI, headers=headers, data=json.dumps(output)).json()
+                                        print AOpost
+                                        break
+                                    indicator_2 = instance['container']['indicator_2']
+                                else:
+                                    continue
+                                break
+                            else:
                                 indicator_1 = indicator_1.split('-')
                                 indicator_1a = indicator_1[0]
                                 indicator_1a = indicator_1a.rjust(2,'0')
                                 indicator_1b = re.sub('[a-z]', '', indicator_1[1])
                                 indicator_1b = indicator_1b.rjust(2,'0')
+                                indicator_2 = '_' + indicator_2.rjust(2,'0')
                                 try:
                                     indicator_3 = instance['container']['indicator_3']
                                     indicator_3 = '_' + indicator_3.rjust(2,'0')
@@ -116,38 +154,26 @@ for item in itemList:
                                 if potentialFilename == DSitems['strippedFileName']:
                                     print 'Creating JSON for match between ' + potentialFilename + ' and ' + strippedFileName + '.'
                                     match['digital_object_id'] = DSbaseURL + itemHandle
-                                    match['title'] = output['title'] + '(digital copy)'
+                                    match['title'] = output['title'] + ' (digital copy)'
                                     match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
-                                    print match
+                                    match['linked_instances'] = [{'ref': output['uri']}]
+                                    match['publish'] = True
+                                    print 'Posting new digital object.'
+                                    DOpost = requests.post(ASbaseURL + '/repositories/3/digital_objects', headers=headers, data=json.dumps(match)).json()
+                                    print DOpost
+                                    instances = output['instances']
+                                    digital_obj = {'ref': DOpost['uri']}
+                                    digital_obj = {'instance_type': 'digital_object', 'digital_object': digital_obj}
+                                    instances.append(digital_obj)
+                                    output['instances'] = instances
+                                    print 'Linking existing archival object.'
+                                    AOpost = requests.post(ASbaseURL + aoURI, headers=headers, data=json.dumps(output)).json()
+                                    print AOpost
                                     break
-                                indicator_2 = instance['container']['indicator_2']
-                            else:
-                                continue
-                            break
-                        else:
-                            print 'Constructing potential file name from archival object.'
-                            indicator_1 = indicator_1.split('-')
-                            indicator_1a = indicator_1[0]
-                            indicator_1a = indicator_1a.rjust(2,'0')
-                            indicator_1b = re.sub('[a-z]', '', indicator_1[1])
-                            indicator_1b = indicator_1b.rjust(2,'0')
-                            indicator_2 = '_' + indicator_2.rjust(2,'0')
-                            try:
-                                indicator_3 = instance['container']['indicator_3']
-                                indicator_3 = '_' + indicator_3.rjust(2,'0')
-                            except:
-                                indicator_3 = ''
-                            potentialFilename = indicator_1a + '_' + indicator_1b + indicator_2 + indicator_3
-                            print 'Comparing ' + potentialFilename + ' to ' + DSitems['strippedFileName']
-                            if potentialFilename == DSitems['strippedFileName']:
-                                print 'Creating JSON for match between ' + potentialFilename + ' and ' + strippedFileName + '.'
-                                match['digital_object_id'] = DSbaseURL + itemHandle
-                                match['title'] = output['title'] + '(digital copy)'
-                                match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
-                                print match
-                                break
-                    except:
-                        indicator_2 = ''
+                        except:
+                            indicator_2 = ''
+                except:
+                    continue
         else:
             continue
         break
