@@ -1,5 +1,5 @@
-import requests, json, secrets, time, urllib, re
-
+import requests, json, secrets, time, urllib, re, logging
+logging.basicConfig(filename='spacewalk.log',level=logging.INFO)
 startTime = time.time()
 
 # import secrets
@@ -74,7 +74,7 @@ else:
     print 'DSpace connection error. Please confirm DSpace is running.'
 collection = requests.get(DSendpoint).json()
 collectionID = collection['id']
-DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=2800'
+DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=500'
 itemList = requests.get(DSendpoint).json()
 print 'Found ' + str(len(itemList)) + ' DSpace items attached to collection.'
 for item in itemList:
@@ -115,7 +115,7 @@ for item in itemList:
                                     potentialFilename = indicator_1a + '_' + indicator_1b + indicator_2 + indicator_3
                                     print 'Comparing ' + potentialFilename + ' to ' + DSitems['strippedFileName']
                                     if potentialFilename == DSitems['strippedFileName']:
-                                        print 'Creating JSON for match between ' + potentialFilename + ' and ' + strippedFileName + '.'
+                                        logging.info('Match between ' + potentialFilename + ' and ' + strippedFileName + '.')
                                         match['digital_object_id'] = DSbaseURL + itemHandle
                                         match['title'] = output['title'] + ' (digital copy)'
                                         match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
@@ -123,7 +123,7 @@ for item in itemList:
                                         match['publish'] = True
                                         print 'Posting new digital object.'
                                         DOpost = requests.post(ASbaseURL + '/repositories/3/digital_objects', headers=headers, data=json.dumps(match)).json()
-                                        print DOpost
+                                        logging.info(DOpost)
                                         instances = output['instances']
                                         digital_obj = {'ref': DOpost['uri']}
                                         digital_obj = {'instance_type': 'digital_object', 'digital_object': digital_obj}
@@ -131,7 +131,7 @@ for item in itemList:
                                         output['instances'] = instances
                                         print 'Linking existing archival object.'
                                         AOpost = requests.post(ASbaseURL + aoURI, headers=headers, data=json.dumps(output)).json()
-                                        print AOpost
+                                        logging.info(AOpost)
                                         break
                                     indicator_2 = instance['container']['indicator_2']
                                 else:
@@ -152,7 +152,7 @@ for item in itemList:
                                 potentialFilename = indicator_1a + '_' + indicator_1b + indicator_2 + indicator_3
                                 print 'Comparing ' + potentialFilename + ' to ' + DSitems['strippedFileName']
                                 if potentialFilename == DSitems['strippedFileName']:
-                                    print 'Creating JSON for match between ' + potentialFilename + ' and ' + strippedFileName + '.'
+                                    logging.info('Match between ' + potentialFilename + ' and ' + strippedFileName + '.')
                                     match['digital_object_id'] = DSbaseURL + itemHandle
                                     match['title'] = output['title'] + ' (digital copy)'
                                     match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
@@ -160,7 +160,7 @@ for item in itemList:
                                     match['publish'] = True
                                     print 'Posting new digital object.'
                                     DOpost = requests.post(ASbaseURL + '/repositories/3/digital_objects', headers=headers, data=json.dumps(match)).json()
-                                    print DOpost
+                                    logging.info(DOpost)
                                     instances = output['instances']
                                     digital_obj = {'ref': DOpost['uri']}
                                     digital_obj = {'instance_type': 'digital_object', 'digital_object': digital_obj}
@@ -168,7 +168,7 @@ for item in itemList:
                                     output['instances'] = instances
                                     print 'Linking existing archival object.'
                                     AOpost = requests.post(ASbaseURL + aoURI, headers=headers, data=json.dumps(output)).json()
-                                    print AOpost
+                                    logging.info(AOpost)
                                     break
                         except:
                             indicator_2 = ''
