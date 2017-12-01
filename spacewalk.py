@@ -1,5 +1,5 @@
 import requests, json, secrets, time, urllib, re, logging
-logging.basicConfig(filename='spacewalk.log',level=logging.INFO)
+logging.basicConfig(filename= time.strftime('%Y-%m-%d_%H%M%S') + '_spacewalk.log',level=logging.INFO)
 startTime = time.time()
 
 # import secrets
@@ -118,7 +118,7 @@ for item in itemList:
                                         logging.info('Match between ' + potentialFilename + ' and ' + strippedFileName + '.')
                                         match['digital_object_id'] = DSbaseURL + itemHandle
                                         match['title'] = output['title'] + ' (digital copy)'
-                                        match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
+                                        match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle, 'publish': True}]
                                         match['linked_instances'] = [{'ref': output['uri']}]
                                         match['publish'] = True
                                         print 'Posting new digital object.'
@@ -155,7 +155,7 @@ for item in itemList:
                                     logging.info('Match between ' + potentialFilename + ' and ' + strippedFileName + '.')
                                     match['digital_object_id'] = DSbaseURL + itemHandle
                                     match['title'] = output['title'] + ' (digital copy)'
-                                    match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle}]
+                                    match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle, 'publish': True}]
                                     match['linked_instances'] = [{'ref': output['uri']}]
                                     match['publish'] = True
                                     print 'Posting new digital object.'
@@ -177,6 +177,8 @@ for item in itemList:
         else:
             continue
         break
+    else:
+        logging.warn('No match found for ' + strippedFileName)
 
 # show script runtime
 elapsedTime = time.time() - startTime
