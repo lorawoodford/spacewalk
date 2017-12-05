@@ -1,5 +1,5 @@
 import requests, json, secrets, time, urllib, re, logging
-logging.basicConfig(filename= time.strftime('%Y-%m-%d_%H%M%S') + '_spacewalk.log',level=logging.INFO)
+logging.basicConfig(filename= time.strftime('%Y-%m-%d_%H%M%S') + '_spacewalk.log',format='%(levelname)s:%(message)s',level=logging.INFO)
 startTime = time.time()
 
 # import secrets
@@ -74,7 +74,7 @@ else:
     print 'DSpace connection error. Please confirm DSpace is running.'
 collection = requests.get(DSendpoint).json()
 collectionID = collection['id']
-DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=500'
+DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=2800'
 itemList = requests.get(DSendpoint).json()
 print 'Found ' + str(len(itemList)) + ' DSpace items attached to collection.'
 for item in itemList:
@@ -117,7 +117,7 @@ for item in itemList:
                                     if potentialFilename == DSitems['strippedFileName']:
                                         logging.info('Match between ' + potentialFilename + ' and ' + strippedFileName + '.')
                                         match['digital_object_id'] = DSbaseURL + itemHandle
-                                        match['title'] = output['title'] + ' (digital copy)'
+                                        match['title'] = output['title']
                                         match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle, 'publish': True}]
                                         match['linked_instances'] = [{'ref': output['uri']}]
                                         match['publish'] = True
@@ -154,7 +154,7 @@ for item in itemList:
                                 if potentialFilename == DSitems['strippedFileName']:
                                     logging.info('Match between ' + potentialFilename + ' and ' + strippedFileName + '.')
                                     match['digital_object_id'] = DSbaseURL + itemHandle
-                                    match['title'] = output['title'] + ' (digital copy)'
+                                    match['title'] = output['title']
                                     match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle, 'publish': True}]
                                     match['linked_instances'] = [{'ref': output['uri']}]
                                     match['publish'] = True
