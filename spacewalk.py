@@ -6,7 +6,8 @@ startTime = time.time()
 ASbaseURL = secrets.ASbaseURL
 ASuser = secrets.ASuser
 ASpassword = secrets.ASpassword
-DSbaseURL = secrets.DSbaseURL
+DSStagebaseURL = secrets.DSStagebaseURL
+DSProdbaseURL = secrets.DSProdbaseURL
 
 # function to find key in nested dicts: see http://stackoverflow.com/questions/9807634/find-all-occurences-of-a-key-in-nested-python-dictionaries-and-lists
 def gen_dict_extract(key, var):
@@ -67,14 +68,14 @@ print 'Found ' + str(len(archivalObjects)-1) + ' archival objects attached to re
 
 # Get Dspace item list
 handle = '1774.2/41445'#raw_input('Enter handle: ')
-DSendpoint = DSbaseURL + 'rest/handle/' + handle
+DSendpoint = DSStagebaseURL + 'rest/handle/' + handle
 if DSendpoint != '':
     print 'Connected to DSpace!'
 else:
     print 'DSpace connection error. Please confirm DSpace is running.'
 collection = requests.get(DSendpoint).json()
 collectionID = collection['id']
-DSendpoint = DSbaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=2800'
+DSendpoint = DSStagebaseURL + 'rest/collections/' + str(collectionID)+ '/items?limit=2800'
 itemList = requests.get(DSendpoint).json()
 print 'Found ' + str(len(itemList)) + ' DSpace items attached to collection.'
 for item in itemList:
@@ -82,7 +83,7 @@ for item in itemList:
     DSitems = {}
     itemHandle = item['handle']
     itemID = str(item['link'])
-    bitstreams = requests.get(DSbaseURL+itemID+'/bitstreams').json()
+    bitstreams = requests.get(DSStagebaseURL+itemID+'/bitstreams').json()
     for bitstream in bitstreams:
         fileName = bitstream['name']
         strippedFileName = fileName.replace('.pdf','')
@@ -116,9 +117,9 @@ for item in itemList:
                                     print 'Comparing ' + potentialFilename + ' to ' + DSitems['strippedFileName']
                                     if potentialFilename == DSitems['strippedFileName']:
                                         logging.info('Match between ' + potentialFilename + ' and ' + strippedFileName + '.')
-                                        match['digital_object_id'] = DSbaseURL + itemHandle
+                                        match['digital_object_id'] = DSProdbaseURL + itemHandle
                                         match['title'] = output['title']
-                                        match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle, 'publish': True}]
+                                        match['file_versions'] = [{'file_uri': DSProdbaseURL + itemHandle, 'publish': True}]
                                         match['linked_instances'] = [{'ref': output['uri']}]
                                         match['publish'] = True
                                         print 'Posting new digital object.'
@@ -153,9 +154,9 @@ for item in itemList:
                                 print 'Comparing ' + potentialFilename + ' to ' + DSitems['strippedFileName']
                                 if potentialFilename == DSitems['strippedFileName']:
                                     logging.info('Match between ' + potentialFilename + ' and ' + strippedFileName + '.')
-                                    match['digital_object_id'] = DSbaseURL + itemHandle
+                                    match['digital_object_id'] = DSProdbaseURL + itemHandle
                                     match['title'] = output['title']
-                                    match['file_versions'] = [{'file_uri': DSbaseURL + itemHandle, 'publish': True}]
+                                    match['file_versions'] = [{'file_uri': DSProdbaseURL + itemHandle, 'publish': True}]
                                     match['linked_instances'] = [{'ref': output['uri']}]
                                     match['publish'] = True
                                     print 'Posting new digital object.'
