@@ -125,6 +125,8 @@ for item in itemList:
                                         print 'Posting new digital object.'
                                         DOpost = requests.post(ASbaseURL + '/repositories/3/digital_objects', headers=headers, data=json.dumps(match)).json()
                                         logging.info(DOpost)
+                                        if 'error' in DOpost:
+                                            break
                                         instances = output['instances']
                                         digital_obj = {'ref': DOpost['uri']}
                                         digital_obj = {'instance_type': 'digital_object', 'digital_object': digital_obj}
@@ -162,6 +164,8 @@ for item in itemList:
                                     print 'Posting new digital object.'
                                     DOpost = requests.post(ASbaseURL + '/repositories/3/digital_objects', headers=headers, data=json.dumps(match)).json()
                                     logging.info(DOpost)
+                                    if 'error' in DOpost:
+                                        break
                                     instances = output['instances']
                                     digital_obj = {'ref': DOpost['uri']}
                                     digital_obj = {'instance_type': 'digital_object', 'digital_object': digital_obj}
